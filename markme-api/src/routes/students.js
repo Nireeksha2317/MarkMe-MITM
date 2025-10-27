@@ -13,46 +13,37 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { search } = req.query;
-    let query = {};
+    const pipeline = [];
 
+    // Add search stage if a search query is provided
     if (search) {
       const searchRegex = new RegExp(search, 'i'); // Case-insensitive search
-      query = {
-        $or: [
-          { 'Student Name': searchRegex },
-          { 'Student USN': searchRegex }
-        ]
-      };
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'Student Name': searchRegex },
+            { 'Student USN': searchRegex },
+          ],
+        },
+      });
     }
 
-    // Fetch plain JS objects for efficiency
-    const studentsFromDB = await Student.find(query).sort({ 'Student USN': 1 }).lean();
+    // Add projection and sorting stages
+    pipeline.push({
+      $project: {
+        _id: 0,
+        usn: '$Student USN',
+        name: '$Student Name',
+      },
+    });
+    pipeline.push({ $sort: { usn: 1 } });
 
-    // Manually map the fields to the desired structure
-    const students = studentsFromDB.map(student => ({
-      usn: student['Student USN'],
-      name: student['Student Name']
-    }));
-
+    const students = await Student.aggregate(pipeline);
     res.status(200).json({ ok: true, data: students });
 
   } catch (error) {
     console.error('Error fetching students:', error);
     res.status(500).json({ ok: false, message: 'Failed to fetch students.' });
-  }
-});
-
-/**
- * @route   GET /students/debug/get-first
- * @desc    (TEMPORARY DEBUG) Get the first student document from the DB.
- * @access  Public
- */
-router.get('/debug/get-first', async (req, res) => {
-  try {
-    const student = await Student.findOne().lean();
-    res.status(200).json({ ok: true, debug_data: student });
-  } catch (error) {
-    res.status(500).json({ ok: false, message: 'Debug failed', error });
   }
 });
 

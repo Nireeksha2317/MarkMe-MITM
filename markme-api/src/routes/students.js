@@ -12,38 +12,12 @@ const router = express.Router();
  */
 router.get('/', async (req, res) => {
   try {
-    const { search } = req.query;
-    const pipeline = [];
-
-    // Add search stage if a search query is provided
-    if (search) {
-      const searchRegex = new RegExp(search, 'i'); // Case-insensitive search
-      pipeline.push({
-        $match: {
-          $or: [
-            { 'Student Name': searchRegex },
-            { 'Student USN': searchRegex },
-          ],
-        },
-      });
-    }
-
-    // Add projection and sorting stages
-    pipeline.push({
-      $project: {
-        _id: 0,
-        usn: '$Student USN',
-        name: '$Student Name',
-      },
-    });
-    pipeline.push({ $sort: { usn: 1 } });
-
-    const students = await Student.aggregate(pipeline);
-    res.status(200).json({ ok: true, data: students });
-
+    // TEMPORARY DEBUG: Return the first student document raw.
+    const student = await Student.findOne().lean();
+    res.status(200).json({ ok: true, debug_data: student });
   } catch (error) {
-    console.error('Error fetching students:', error);
-    res.status(500).json({ ok: false, message: 'Failed to fetch students.' });
+    console.error('Error fetching debug student:', error);
+    res.status(500).json({ ok: false, message: 'Debug failed', error });
   }
 });
 

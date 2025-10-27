@@ -7,6 +7,8 @@ const mongoose = require('mongoose');
  * @property {string} name - The full name of the student.
  * @property {string} fatherPhone - The phone number of the student's father.
  */
+const mongoose = require('mongoose');
+
 const studentSchema = new mongoose.Schema({
   'Student USN': {
     type: String,
@@ -23,11 +25,14 @@ const studentSchema = new mongoose.Schema({
   'Student Phone Number': {
     type: String,
     trim: true
+  },
+  'Student Email Address': {
+    type: String,
+    trim: true
   }
-  // Add any other student info fields here from your Compass screenshot
-}, { collection: 'student_db' });
+}, { collection: 'students' }); // Corrected collection name
 
 const Student = mongoose.model('Student', studentSchema);
 
+module.exports = Student;
 
-module.exports = mongoose.model('Student', studentSchema, 'students');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
+import 'home_screen.dart';
 
 void main() {
   runApp(const MarkMeApp());
@@ -48,6 +49,7 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
   final _facultyNameController = TextEditingController();
   final _facultyIdController = TextEditingController();
   final _passwordController = TextEditingController();
+  String? _selectedSemester;
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
@@ -61,7 +63,7 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
 
@@ -70,7 +72,7 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
     );
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
+      begin: const Offset(0, 0.15),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
@@ -85,11 +87,11 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
     _facultyNameController.dispose();
     _facultyIdController.dispose();
     _passwordController.dispose();
+    // No need to dispose _selectedSemester as it's a simple String
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
-    // Hide keyboard
     FocusScope.of(context).unfocus();
 
     if (_formKey.currentState!.validate()) {
@@ -105,48 +107,31 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
         _showSuccessMessage = true;
       });
 
-      // Simulate redirect
       await Future.delayed(const Duration(milliseconds: 1500));
 
-      if (!mounted) return;
-
-      // In production, navigate to dashboard
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (_) => DashboardScreen()),
-      // );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Login successful! Welcome, ${_facultyNameController.text}',
-                  style: const TextStyle(fontSize: 15),
-                ),
-              ),
-            ],
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
           ),
-          backgroundColor: const Color(0xFF21808D),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+        );
+      }
+
+      // The success message and form reset can be removed if you navigate away permanently.
+      // I'll leave them here in case you want to pop back to the login screen.
 
       setState(() {
         _showSuccessMessage = false;
       });
 
+      // Reset form
       _formKey.currentState!.reset();
       _facultyNameController.clear();
       _facultyIdController.clear();
       _passwordController.clear();
+      setState(() {
+        _selectedSemester = null;
+      });
     }
   }
 
@@ -158,7 +143,7 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image with Blur Effect
+          // Background Image with Blur
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -168,15 +153,15 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
                 ),
               ),
               child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                filter: ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(0.4),
-                        Colors.black.withOpacity(0.6),
+                        const Color(0xFF003366).withOpacity(0.5),
+                        const Color(0xFF003366).withOpacity(0.8),
                       ],
                     ),
                   ),
@@ -188,117 +173,90 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
           // Login Form
           SafeArea(
             child: Center(
-              child: SingleChildScrollView(
+              child: ListView(
                 padding: EdgeInsets.symmetric(
                   horizontal: isSmallScreen ? 24 : 40,
                   vertical: 20,
                 ),
-                child: FadeTransition(
+                children: [
+                  FadeTransition(
                   opacity: _fadeAnimation,
                   child: SlideTransition(
                     position: _slideAnimation,
                     child: Container(
-                      constraints: const BoxConstraints(maxWidth: 440),
+                      constraints: const BoxConstraints(maxWidth: 460),
                       child: Card(
-                        elevation: 16,
-                        shadowColor: Colors.black.withOpacity(0.4),
+                        elevation: 24,
+                        shadowColor: Colors.black.withOpacity(0.5),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: Container(
                           padding: EdgeInsets.all(isSmallScreen ? 32 : 40),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.95),
-                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.white.withOpacity(0.96),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Form(
                             key: _formKey,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // Logo
+                                // MIT Logo
                                 _buildLogo(isSmallScreen),
 
-                                SizedBox(height: isSmallScreen ? 20 : 24),
+                                SizedBox(height: isSmallScreen ? 24 : 28),
 
                                 // Institution Name
                                 Text(
                                   'Maharaja Institute of Technology',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: isSmallScreen ? 20 : 22,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF134252),
+                                    fontSize: isSmallScreen ? 21 : 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF1D3B4B),
                                     height: 1.3,
-                                    letterSpacing: -0.01,
+                                    letterSpacing: -0.5,
                                   ),
                                 ),
 
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
 
                                 // Location
                                 Text(
                                   'Mysore',
                                   style: TextStyle(
-                                    fontSize: isSmallScreen ? 14 : 16,
+                                    fontSize: isSmallScreen ? 15 : 17,
                                     color: const Color(0xFF626C71),
-                                    fontWeight: FontWeight.w400,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.5,
                                   ),
                                 ),
 
-                                SizedBox(height: isSmallScreen ? 24 : 32),
+                                SizedBox(height: isSmallScreen ? 28 : 36),
 
                                 // Login Title
                                 Text(
                                   'Faculty Login',
                                   style: TextStyle(
-                                    fontSize: isSmallScreen ? 24 : 28,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF134252),
-                                    letterSpacing: -0.5,
+                                    fontSize: isSmallScreen ? 26 : 30,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF21808D),
+                                    letterSpacing: -0.8,
                                   ),
                                 ),
 
-                                SizedBox(height: isSmallScreen ? 24 : 32),
+                                SizedBox(height: isSmallScreen ? 28 : 36),
 
                                 // Success Message
-                                if (_showSuccessMessage)
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    margin: const EdgeInsets.only(bottom: 20),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF21808D)
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: const [
-                                        Icon(
-                                          Icons.check_circle,
-                                          color: Color(0xFF21808D),
-                                          size: 20,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            'Login successful! Redirecting...',
-                                            style: TextStyle(
-                                              color: Color(0xFF21808D),
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                if (_showSuccessMessage) _buildSuccessMessage(),
 
                                 // Faculty Name Field
                                 _buildTextField(
                                   controller: _facultyNameController,
                                   label: 'Faculty Name',
                                   hint: 'Enter your full name',
-                                  icon: Icons.person_outline,
+                                  icon: Icons.person_outline_rounded,
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
                                       return 'Please enter your faculty name';
@@ -310,7 +268,7 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
                                   },
                                 ),
 
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 22),
 
                                 // Faculty ID Field
                                 _buildTextField(
@@ -324,23 +282,28 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
                                     }
                                     if (!RegExp(r'^[A-Za-z0-9]+$')
                                         .hasMatch(value.trim())) {
-                                      return 'Faculty ID should contain only letters and numbers';
+                                      return 'Faculty ID: letters and numbers only';
                                     }
                                     return null;
                                   },
                                 ),
 
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 22),
+
+                                // Semester Dropdown
+                                _buildSemesterDropdown(),
+
+                                const SizedBox(height: 22),
 
                                 // Password Field
                                 _buildPasswordField(isSmallScreen),
 
-                                SizedBox(height: isSmallScreen ? 24 : 32),
+                                SizedBox(height: isSmallScreen ? 32 : 40),
 
                                 // Login Button
                                 _buildLoginButton(isSmallScreen),
 
-                                SizedBox(height: isSmallScreen ? 24 : 32),
+                                SizedBox(height: isSmallScreen ? 28 : 32),
 
                                 // Footer
                                 _buildFooter(isSmallScreen),
@@ -352,6 +315,7 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
                     ),
                   ),
                 ),
+                ],
               ),
             ),
           ),
@@ -362,53 +326,67 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
 
   Widget _buildLogo(bool isSmallScreen) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.8, end: 1.0),
-      duration: const Duration(milliseconds: 800),
+      tween: Tween(begin: 0.7, end: 1.0),
+      duration: const Duration(milliseconds: 1000),
       curve: Curves.elasticOut,
       builder: (context, scale, child) {
         return Transform.scale(
           scale: scale,
           child: Container(
-            width: isSmallScreen ? 100 : 120,
-            height: isSmallScreen ? 100 : 120,
+            width: isSmallScreen ? 110 : 130,
+            height: isSmallScreen ? 110 : 130,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: const Color(0xFF21808D),
-                width: 3,
-              ),
-              color: const Color(0xFF1D3B4B),
+              color: Colors.white.withOpacity(0.9),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 25,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.account_balance,
-                  size: isSmallScreen ? 36 : 42,
-                  color: const Color(0xFFD4AF37),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'MIT',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 18 : 20,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFFD4AF37),
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ],
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/mit_logo.png',
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSuccessMessage() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF21808D).withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF21808D).withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: const [
+          Icon(Icons.check_circle_rounded, color: Color(0xFF21808D), size: 24),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Login successful! Redirecting...',
+              style: TextStyle(
+                color: Color(0xFF21808D),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -425,71 +403,147 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
         Text(
           label,
           style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF134252),
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1D3B4B),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         TextFormField(
           controller: controller,
           validator: validator,
           style: const TextStyle(
-            fontSize: 15,
-            color: Color(0xFF134252),
+            fontSize: 16,
+            color: Color(0xFF1D3B4B),
+            fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
               color: const Color(0xFF626C71).withOpacity(0.5),
+              fontSize: 15,
             ),
-            suffixIcon: Icon(
-              icon,
-              color: const Color(0xFF626C71),
-              size: 20,
-            ),
+            suffixIcon: Icon(icon, color: const Color(0xFF21808D), size: 22),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.9),
+            fillColor: Colors.white,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: const Color(0xFF5E5240).withOpacity(0.2),
+                color: const Color(0xFF21808D).withOpacity(0.3),
                 width: 1.5,
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: const Color(0xFF5E5240).withOpacity(0.2),
+                color: const Color(0xFF21808D).withOpacity(0.3),
                 width: 1.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
                 color: Color(0xFF21808D),
-                width: 2,
+                width: 2.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
                 color: Color(0xFFC0152F),
                 width: 1.5,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
                 color: Color(0xFFC0152F),
-                width: 2,
+                width: 2.5,
               ),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+              horizontal: 18,
+              vertical: 16,
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSemesterDropdown() {
+    const List<String> semesters = ['1st sem', '3rd sem', '5th sem'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Semester',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1D3B4B),
+          ),
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          value: _selectedSemester,
+          hint: Text(
+            'Select a semester',
+            style: TextStyle(
+              color: const Color(0xFF626C71).withOpacity(0.5),
+              fontSize: 15,
+            ),
+          ),
+          icon: const Icon(Icons.arrow_drop_down_rounded,
+              color: Color(0xFF21808D)),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: const Color(0xFF21808D).withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: const Color(0xFF21808D).withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFF21808D),
+                width: 2.5,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFC0152F),
+                width: 1.5,
+              ),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          ),
+          items: semesters.map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (newValue) {
+            setState(() {
+              _selectedSemester = newValue;
+            });
+          },
+          validator: (value) =>
+              value == null ? 'Please select a semester' : null,
         ),
       ],
     );
@@ -502,12 +556,12 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
         const Text(
           'Department Password',
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF134252),
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1D3B4B),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         TextFormField(
           controller: _passwordController,
           obscureText: !_isPasswordVisible,
@@ -521,19 +575,23 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
             return null;
           },
           style: const TextStyle(
-            fontSize: 15,
-            color: Color(0xFF134252),
+            fontSize: 16,
+            color: Color(0xFF1D3B4B),
+            fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: 'Enter department password',
             hintStyle: TextStyle(
               color: const Color(0xFF626C71).withOpacity(0.5),
+              fontSize: 15,
             ),
             suffixIcon: IconButton(
               icon: Icon(
-                _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                color: const Color(0xFF626C71),
-                size: 20,
+                _isPasswordVisible
+                    ? Icons.visibility_off_rounded
+                    : Icons.visibility_rounded,
+                color: const Color(0xFF21808D),
+                size: 22,
               ),
               onPressed: () {
                 setState(() {
@@ -542,28 +600,140 @@ class _FacultyLoginScreenState extends State<FacultyLoginScreen>
               },
             ),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.9),
+            fillColor: Colors.white,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: const Color(0xFF5E5240).withOpacity(0.2),
+                color: const Color(0xFF21808D).withOpacity(0.3),
                 width: 1.5,
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: const Color(0xFF5E5240).withOpacity(0.2),
+                color: const Color(0xFF21808D).withOpacity(0.3),
                 width: 1.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
                 color: Color(0xFF21808D),
-                width: 2,
+                width: 2.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
+                color: Color(0xFFC0152F),
+                width: 1.5,
+              ),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFC0152F),
+                width: 2.5,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 16,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginButton(bool isSmallScreen) {
+    return SizedBox(
+      width: double.infinity,
+      height: isSmallScreen ? 54 : 58,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _handleLogin,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF21808D),
+          foregroundColor: Colors.white,
+          elevation: 8,
+          shadowColor: const Color(0xFF21808D).withOpacity(0.4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          disabledBackgroundColor: const Color(0xFF21808D).withOpacity(0.6),
+        ),
+        child: _isLoading
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Text(
+                    'Logging in',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  SizedBox(width: 14),
+                  SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                ],
+              )
+            : Text(
+                'Login',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 17 : 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(bool isSmallScreen) {
+    return Column(
+      children: [
+        Container(
+          height: 1.5,
+          margin: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                const Color(0xFF21808D).withOpacity(0.3),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+        Text(
+          'Maharaja Institute of Technology',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: isSmallScreen ? 13 : 14,
+            color: const Color(0xFF626C71),
+            fontWeight: FontWeight.w600,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Belawadi, Srirangapatna Tq., Mysore - 571438',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: isSmallScreen ? 11 : 12,
+            color: const Color(0xFF626C71).withOpacity(0.8),
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
+}

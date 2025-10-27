@@ -59,7 +59,18 @@ app.use(limiter);
 
 // Health check endpoint
 app.get('/', (req, res) => {
-  res.status(200).json({ ok: true, message: 'MarkMe API is running!' });
+  res.status(200).json({ ok: true, service: "MarkMe API" });
+});
+
+// Home route
+app.get('/home', (req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: 'MarkMe API',
+    version: '1.0.0',
+    description: 'Backend API for the MarkMe Attendance & Mentoring App',
+    author: 'Gemini',
+  });
 });
 
 // Student and Attendance routes

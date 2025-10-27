@@ -13,19 +13,32 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { search } = req.query;
-    let query = {};
+    const pipeline = [];
 
+    // Add search stage if a search query is provided
     if (search) {
       const searchRegex = new RegExp(search, 'i'); // Case-insensitive search
-      query = {
-        $or: [
-          { 'Student Name': searchRegex },
-          { 'Student USN': searchRegex }
-        ]
-      };
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'Student Name': searchRegex },
+            { 'Student USN': searchRegex },
+          ],
+        },
+      });
     }
 
-    const students = await Student.find(query).select('Student Name, Student USN').sort({ 'Student USN': 1 });
+    // Add projection and sorting stages
+    pipeline.push({
+      $project: {
+        _id: 0,
+        usn: '$Student USN',
+        name: '$Student Name',
+      },
+    });
+    pipeline.push({ $sort: { usn: 1 } });
+
+    const students = await Student.aggregate(pipeline);
     res.status(200).json({ ok: true, data: students });
 
   } catch (error) {
@@ -49,7 +62,15 @@ router.get('/:usn', async (req, res) => {
       return res.status(404).json({ ok: false, message: 'Student not found.' });
     }
 
-    res.status(200).json({ ok: true, student });
+    // Manually map the fields to the desired JSON structure
+    const studentData = {
+      usn: student['Student USN'],
+      name: student['Student Name'],
+      phone: student['Student Phone Number'],
+      email: student['Student Email Address'],
+    };
+
+    res.status(200).json({ ok: true, data: studentData });
 
   } catch (error) {
     console.error(`Error fetching student ${req.params.usn}:`, error);

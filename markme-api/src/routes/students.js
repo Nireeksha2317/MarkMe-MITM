@@ -13,32 +13,27 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { search } = req.query;
-    const pipeline = [];
+    let query = {};
 
-    // Add search stage if a search query is provided
     if (search) {
       const searchRegex = new RegExp(search, 'i'); // Case-insensitive search
-      pipeline.push({
-        $match: {
-          $or: [
-            { 'Student Name': searchRegex },
-            { 'Student USN': searchRegex },
-          ],
-        },
-      });
+      query = {
+        $or: [
+          { 'Student Name': searchRegex },
+          { 'Student USN': searchRegex }
+        ]
+      };
     }
 
-    // Add projection and sorting stages
-    pipeline.push({
-      $project: {
-        _id: 0,
-        usn: '$Student USN',
-        name: '$Student Name',
-      },
-    });
-    pipeline.push({ $sort: { usn: 1 } });
+    // Fetch plain JS objects for efficiency
+    const studentsFromDB = await Student.find(query).sort({ 'Student USN': 1 }).lean();
 
-    const students = await Student.aggregate(pipeline);
+    // Manually map the fields to the desired structure
+    const students = studentsFromDB.map(student => ({
+      usn: student['Student USN'],
+      name: student['Student Name']
+    }));
+
     res.status(200).json({ ok: true, data: students });
 
   } catch (error) {

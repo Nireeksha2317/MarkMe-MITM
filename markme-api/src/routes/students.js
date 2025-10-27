@@ -48,6 +48,20 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * @route   GET /students/debug/get-first
+ * @desc    (TEMPORARY DEBUG) Get the first student document from the DB.
+ * @access  Public
+ */
+router.get('/debug/get-first', async (req, res) => {
+  try {
+    const student = await Student.findOne().lean();
+    res.status(200).json({ ok: true, debug_data: student });
+  } catch (error) {
+    res.status(500).json({ ok: false, message: 'Debug failed', error });
+  }
+});
+
+/**
  * @route   GET /students/:usn
  * @desc    Get full details for a single student by their USN.
  * @access  Public
